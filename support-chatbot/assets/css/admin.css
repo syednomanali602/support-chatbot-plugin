@@ -1,0 +1,192 @@
+/* Support Chatbot — wp-admin screens */
+
+.dvcb-admin .dvcb-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+.dvcb-admin .dvcb-card {
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+}
+.dvcb-admin .dvcb-card a {
+  text-decoration: none;
+}
+.dvcb-admin .dvcb-num {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: #1d2327;
+}
+.dvcb-admin .dvcb-label {
+  margin-top: 4px;
+  color: #50575e;
+}
+
+.dvcb-admin .dvcb-panel {
+  margin: 0 0 18px;
+  padding: 4px 20px 16px;
+  background: #fff;
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+}
+.dvcb-admin .dvcb-panel h2 {
+  margin: 14px 0 6px;
+  font-size: 15px;
+}
+.dvcb-admin .dvcb-panel ol {
+  margin: 8px 0 0 18px;
+}
+.dvcb-admin .dvcb-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+.dvcb-admin .dvcb-muted {
+  color: #787c82;
+  margin-left: 4px;
+}
+.dvcb-admin .dvcb-warn,
+.dvcb-warn {
+  color: #b32d2e;
+}
+
+/* tester */
+.dvcb-test-form {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+  max-width: 640px;
+}
+.dvcb-test-form input {
+  flex: 1;
+  max-width: none;
+}
+.dvcb-test-result:empty {
+  display: none;
+}
+.dvcb-test-result {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: #f6f7f7;
+  border-left: 4px solid #2271b1;
+  border-radius: 0 4px 4px 0;
+  max-width: 720px;
+}
+.dvcb-test-result.is-answer {
+  border-left-color: #00a32a;
+}
+.dvcb-test-result.is-suggest {
+  border-left-color: #dba617;
+}
+.dvcb-test-result.is-fallback {
+  border-left-color: #d63638;
+}
+.dvcb-test-verdict {
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.dvcb-test-reply {
+  margin: 0 0 10px;
+  white-space: pre-wrap;
+}
+.dvcb-test-head {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #50575e;
+}
+.dvcb-test-matches {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dvcb-test-matches td {
+  padding: 5px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+.dvcb-test-matches td:last-child {
+  width: 150px;
+}
+.dvcb-bar {
+  display: inline-block;
+  width: 90px;
+  height: 8px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: #dcdcde;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dvcb-bar span {
+  display: block;
+  height: 100%;
+  background: #2271b1;
+}
+.dvcb-tokens code {
+  margin-right: 4px;
+}
+.dvcb-test-note {
+  margin: 10px 0 0;
+  color: #50575e;
+}
+
+/* FAQ editor */
+.dvcb-fields .dvcb-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.dvcb-fields textarea {
+  margin-top: 4px;
+}
+.dvcb-fields .description {
+  display: block;
+  margin-top: 4px;
+}
+
+/* handoff list / detail */
+.post-type-dvcb_handoff .page-title-action {
+  display: none;
+}
+.dvcb-details th {
+  width: 140px;
+  text-align: left;
+  vertical-align: top;
+}
+.dvcb-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.dvcb-pill-new {
+  background: #fcf0d1;
+  color: #8a5a00;
+}
+.dvcb-pill-ok {
+  background: #d7f2de;
+  color: #0a6b25;
+}
+
+/* unanswered */
+.dvcb-table .dvcb-col-narrow {
+  width: 110px;
+}
+.dvcb-table .dvcb-col-mid {
+  width: 190px;
+}
+.dvcb-admin .dvcb-danger {
+  color: #b32d2e;
+  border-color: #b32d2e;
+}
+
+@media (max-width: 782px) {
+  .dvcb-fields .dvcb-row {
+    grid-template-columns: 1fr;
+  }
+}

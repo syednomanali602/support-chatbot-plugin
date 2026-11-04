@@ -1,0 +1,659 @@
+/*
+ * Support Chatbot
+ *
+ * Every class is prefixed "dvcb-" so nothing here can collide with a theme's
+ * own .btn / .chip / .card styles, and nothing here can restyle the theme.
+ *
+ * Stacking: launcher z-index 100, chat panel 150. Adjust these if your
+ * theme has sticky headers or modals that need to sit above or below.
+ *
+ * Colours come from CSS variables. --dvcb-accent, --dvcb-on-accent,
+ * --dvcb-bottom and --dvcb-side are set inline on #dvcb-root from the
+ * settings screen; the rest switch with data-theme ("dark" / "light").
+ */
+
+.dvcb {
+  --dvcb-accent: #2563eb;
+  --dvcb-on-accent: #06121b;
+  --dvcb-bottom: 100px;
+  --dvcb-side: 28px;
+
+  font-family: var(--font-body, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dvcb,
+.dvcb[data-theme="dark"] {
+  --dvcb-bg: #0b1624;
+  --dvcb-surface: #101e30;
+  --dvcb-bubble: #172a44;
+  --dvcb-border: #22395a;
+  --dvcb-text: #e8f1f8;
+  --dvcb-muted: #8da3b5;
+  --dvcb-field: #08111d;
+  --dvcb-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --dvcb-accent-ink: var(--dvcb-accent);
+}
+
+.dvcb[data-theme="light"] {
+  --dvcb-bg: #ffffff;
+  --dvcb-surface: #f4f8fb;
+  --dvcb-bubble: #eaf1f7;
+  --dvcb-border: #d6e2eb;
+  --dvcb-text: #0b2233;
+  --dvcb-muted: #5b7484;
+  --dvcb-field: #ffffff;
+  --dvcb-shadow: 0 24px 60px rgba(11, 34, 51, 0.2);
+  /* The accent as a FILL (buttons, your bubbles) keeps dark text on it and
+     is fine. As text or a focus ring on white it isn't: the default cyan is
+     about 1.9:1 there against the 4.5:1 (text) / 3:1 (focus) WCAG needs. */
+  --dvcb-accent-ink: #1b5f73;
+}
+@supports (color: color-mix(in srgb, red, blue)) {
+  .dvcb[data-theme="light"] {
+    --dvcb-accent-ink: color-mix(in srgb, var(--dvcb-accent) 55%, #000);
+  }
+}
+
+.dvcb *,
+.dvcb *::before,
+.dvcb *::after {
+  box-sizing: border-box;
+}
+
+.dvcb [hidden] {
+  display: none !important;
+}
+
+:where(.dvcb) button,
+:where(.dvcb) input,
+:where(.dvcb) textarea {
+  /* :where() keeps this reset at zero specificity. As ".dvcb button" it
+     out-ranked every single-class rule below and silently reset their
+     font-weight and font-size. */
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.dvcb button:focus-visible,
+.dvcb a:focus-visible,
+.dvcb .dvcb-body:focus-visible {
+  outline: 2px solid var(--dvcb-accent-ink);
+  outline-offset: 2px;
+}
+
+.dvcb-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- launcher ------------------------------------------------- */
+
+.dvcb-launcher {
+  position: fixed;
+  z-index: 100;
+  bottom: var(--dvcb-bottom);
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  background: var(--dvcb-accent);
+  color: var(--dvcb-on-accent);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: floatPulse 3.5s ease-in-out infinite;
+}
+.dvcb[data-position="right"] .dvcb-launcher {
+  right: var(--dvcb-side);
+}
+.dvcb[data-position="left"] .dvcb-launcher {
+  left: var(--dvcb-side);
+}
+.dvcb-launcher:hover {
+  transform: translateY(-2px);
+}
+.dvcb-ico {
+  position: absolute;
+  display: flex;
+  transition: opacity 0.2s ease, transform 0.25s ease;
+}
+.dvcb-ico svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dvcb-ico--close {
+  opacity: 0;
+  transform: rotate(-60deg) scale(0.6);
+}
+.dvcb.is-open .dvcb-ico--chat {
+  opacity: 0;
+  transform: rotate(60deg) scale(0.6);
+}
+.dvcb.is-open .dvcb-ico--close {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- panel ---------------------------------------------------- */
+
+.dvcb-panel {
+  position: fixed;
+  z-index: 150;
+  bottom: calc(var(--dvcb-bottom) + 72px);
+  width: min(380px, calc(100vw - 24px));
+  height: min(620px, calc(100vh - var(--dvcb-bottom) - 96px));
+  height: min(620px, calc(100dvh - var(--dvcb-bottom) - 96px));
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--dvcb-bg);
+  color: var(--dvcb-text);
+  border: 1px solid var(--dvcb-border);
+  border-radius: 20px;
+  box-shadow: var(--dvcb-shadow);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(14px) scale(0.98);
+  transition: opacity 0.2s ease, transform 0.22s ease;
+}
+.dvcb[data-position="right"] .dvcb-panel {
+  right: var(--dvcb-side);
+  transform-origin: bottom right;
+}
+.dvcb[data-position="left"] .dvcb-panel {
+  left: var(--dvcb-side);
+  transform-origin: bottom left;
+}
+.dvcb-panel.is-open {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- header --------------------------------------------------- */
+
+.dvcb-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--dvcb-surface);
+  border-bottom: 1px solid var(--dvcb-border);
+}
+.dvcb-avatar {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvcb-accent-ink);
+  background: color-mix(in srgb, var(--dvcb-accent) 14%, transparent);
+}
+.dvcb-avatar svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dvcb-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.dvcb-title {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.25;
+  color: var(--dvcb-text);
+}
+.dvcb-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--dvcb-muted);
+}
+.dvcb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3ecf8e;
+}
+.dvcb-close {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dvcb-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dvcb-close:hover {
+  background: var(--dvcb-bubble);
+  color: var(--dvcb-text);
+}
+.dvcb-close svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* ---------- messages ------------------------------------------------- */
+
+.dvcb-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--dvcb-bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--dvcb-border) transparent;
+}
+
+.dvcb-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 88%;
+}
+.dvcb-msg--bot {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+.dvcb-msg--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.dvcb-bubble {
+  padding: 11px 15px;
+  border-radius: 18px 18px 18px 6px;
+  background: var(--dvcb-bubble);
+  color: var(--dvcb-text);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.dvcb-msg--user .dvcb-bubble {
+  border-radius: 18px 18px 6px 18px;
+  background: var(--dvcb-accent);
+  color: var(--dvcb-on-accent);
+}
+.dvcb-bubble p {
+  margin: 0;
+}
+.dvcb-bubble p + p,
+.dvcb-bubble ul,
+.dvcb-bubble ol {
+  margin-top: 8px;
+}
+.dvcb-bubble ul,
+.dvcb-bubble ol {
+  margin-bottom: 0;
+  padding-left: 20px;
+}
+/* Themes often reset lists globally (some themes set ul{list-style:none}),
+   which would silently remove the bullets from an answer written as a list. */
+.dvcb-bubble ul {
+  list-style: disc;
+}
+.dvcb-bubble ol {
+  list-style: decimal;
+}
+.dvcb-bubble a {
+  color: var(--dvcb-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dvcb-msg--user .dvcb-bubble a {
+  color: inherit;
+}
+.dvcb-bubble code {
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.dvcb-time {
+  margin-top: 3px;
+  padding: 0 4px;
+  font-size: 11.5px;
+  color: var(--dvcb-muted);
+}
+
+.dvcb-action {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  min-height: 40px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--dvcb-accent);
+  color: var(--dvcb-on-accent);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.dvcb-action:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* ---------- choices (starter questions / suggestions) --------------- */
+
+.dvcb-msg:has(> .dvcb-chips) {
+  max-width: 100%;
+}
+.dvcb-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.dvcb-choice {
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 1px solid var(--dvcb-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dvcb-text);
+  font-size: 14px;
+  line-height: 1.25;
+  text-align: left;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.dvcb-choice:hover {
+  border-color: var(--dvcb-accent);
+  background: color-mix(in srgb, var(--dvcb-accent) 10%, transparent);
+}
+.dvcb-choice--alt {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--dvcb-accent-ink) 60%, transparent);
+  color: var(--dvcb-accent-ink);
+}
+
+/* ---------- feedback ------------------------------------------------- */
+
+.dvcb-fb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.dvcb-fb-q {
+  font-size: 12.5px;
+  color: var(--dvcb-muted);
+}
+.dvcb-fb-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--dvcb-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dvcb-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dvcb-fb-btn:hover {
+  color: var(--dvcb-accent-ink);
+  border-color: var(--dvcb-accent-ink);
+}
+.dvcb-fb-btn svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- typing indicator ---------------------------------------- */
+
+.dvcb-typing {
+  display: flex;
+  gap: 5px;
+  padding: 14px 16px;
+}
+.dvcb-typing span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dvcb-muted);
+  animation: dvcb-bounce 1.2s infinite ease-in-out;
+}
+.dvcb-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.dvcb-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes dvcb-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-5px);
+    opacity: 1;
+  }
+}
+
+/* ---------- handoff form -------------------------------------------- */
+
+.dvcb-msg:has(> .dvcb-form) {
+  max-width: 100%;
+  width: 100%;
+}
+.dvcb-form {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--dvcb-border);
+  border-radius: 16px;
+  background: var(--dvcb-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dvcb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dvcb-flabel {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dvcb-muted);
+}
+.dvcb .dvcb-finput,
+.dvcb .dvcb-input {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--dvcb-border);
+  border-radius: 10px;
+  background: var(--dvcb-field);
+  color: var(--dvcb-text);
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+  line-height: 1.4;
+}
+.dvcb .dvcb-finput::placeholder,
+.dvcb .dvcb-input::placeholder {
+  color: var(--dvcb-muted);
+  opacity: 1;
+}
+.dvcb .dvcb-finput:focus,
+.dvcb .dvcb-input:focus {
+  /* One clear ring instead of outline + border stacking into a double line. */
+  outline: none;
+  border-color: var(--dvcb-accent-ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dvcb-accent-ink) 28%, transparent);
+}
+.dvcb .dvcb-ftext {
+  resize: vertical;
+  min-height: 70px;
+  max-height: 160px;
+}
+.dvcb-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.dvcb-ferr {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #ff8a6b;
+  background: rgba(255, 92, 44, 0.12);
+}
+.dvcb[data-theme="light"] .dvcb-ferr {
+  color: #b3380f;
+}
+.dvcb-submit {
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--dvcb-accent);
+  color: var(--dvcb-on-accent);
+  font-weight: 700;
+}
+.dvcb-submit:disabled {
+  opacity: 0.6;
+}
+
+/* ---------- composer ------------------------------------------------- */
+
+.dvcb-composer {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px 14px;
+  background: var(--dvcb-bg);
+  border-top: 1px solid var(--dvcb-border);
+}
+.dvcb .dvcb-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-radius: 999px;
+  padding: 11px 16px;
+}
+.dvcb-send {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--dvcb-accent);
+  color: var(--dvcb-on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.15s ease;
+}
+.dvcb-send:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.dvcb-send:disabled {
+  opacity: 0.5;
+}
+.dvcb-send svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- small screens: bottom sheet ----------------------------- */
+
+@media (max-width: 520px) {
+  .dvcb[data-position] .dvcb-panel {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    height: min(88vh, 720px);
+    height: min(88dvh, 720px);
+    border-radius: 18px;
+  }
+  /* The panel covers the launcher on phones; the close button takes over. */
+  .dvcb.is-open .dvcb-launcher {
+    display: none;
+  }
+  .dvcb-msg {
+    max-width: 92%;
+  }
+  /* iOS Safari zooms the whole page when a field under 16px gets focus. */
+  .dvcb .dvcb-input,
+  .dvcb .dvcb-finput {
+    font-size: 16px;
+  }
+}
+
+/* ---------- motion / print ------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .dvcb *,
+  .dvcb *::before,
+  .dvcb *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  .dvcb-typing span {
+    opacity: 0.7;
+  }
+}
+
+@media print {
+  .dvcb {
+    display: none !important;
+  }
+}
